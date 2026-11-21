@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; connect-src 'none'; img-src data: blob:; media-src data: blob:; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'none'">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Самой лучшей маме на свете</title>
@@ -26,7 +23,7 @@
       align-items: center;
     }
 
-    /* Холст для падающих лепестков */
+    /* Холст с падающими лепестками */
     #petalsCanvas {
       position: fixed;
       inset: 0;
@@ -34,6 +31,7 @@
       height: 100vh;
       pointer-events: none;
       z-index: 30;
+      display: none;
     }
 
     /* Стартовый экран для мамы */
@@ -130,7 +128,7 @@
       z-index: 2;
     }
 
-    /* Вступительный слайд */
+    /* Вступительный слайд (розово-белый) */
     .slide-item.intro-pink {
       background: radial-gradient(circle at center, #ffe4ec 0%, #fff1f5 45%, #ffffff 100%);
       flex-direction: column;
@@ -223,6 +221,7 @@
       border-radius: 2px;
       overflow: hidden;
       margin: 0 4px;
+      cursor: pointer;
     }
     .progress-bar-fill {
       height: 100%;
@@ -241,9 +240,7 @@
     <button class="start-btn" onclick="startPresentation()">Смотреть с музыкой ♫</button>
   </div>
 
-  <!-- Анимация лепестков -->
   <canvas id="petalsCanvas"></canvas>
-
   <audio id="bgMusic" src="song.mp3" preload="auto"></audio>
   <div class="slideshow-container" id="slidesContainer"></div>
 
@@ -260,9 +257,8 @@
 
   <script>
     const TOTAL_PHOTOS = 60;
-
-    const INTRO_SECONDS = 12; // секунд до слов
-    const OUTRO_SECONDS = 10; // секунд на финальный слайд
+    const INTRO_SECONDS = 12;
+    const OUTRO_SECONDS = 10;
 
     let currentIndex = 0;
     const music = document.getElementById("bgMusic");
@@ -270,7 +266,34 @@
     const audioProgress = document.getElementById("audioProgress");
     const timeInfo = document.getElementById("timeInfo");
 
-    /* Инициализация слайдов */
+    // Если audio не нашло song.mp3, пробуем song.mp3.mp3
+    music.addEventListener("error", function() {
+      if (!music.src.endsWith("song.mp3.mp3")) {
+        music.src = "song.mp3.mp3";
+        music.load();
+      }
+    });
+
+    // Функция автоподбора расширения под фактические имена в репозитории
+    function handleImgError(img, id) {
+      const step = parseInt(img.getAttribute("data-step") || "0");
+      const bg = document.getElementById("bg-" + id);
+      const variants = [
+        id + ".jpg.jpg",
+        id + ".jpg.JPG",
+        id + ".JPG",
+        id + ".jpg",
+        id + ".jpeg"
+      ];
+
+      if (step < variants.length) {
+        const nextSrc = variants[step];
+        img.setAttribute("data-step", (step + 1).toString());
+        img.src = nextSrc;
+        if (bg) bg.style.backgroundImage = "url('" + nextSrc + "')";
+      }
+    }
+
     function initSlides() {
       slidesContainer.innerHTML = "";
 
@@ -284,13 +307,13 @@
       `;
       slidesContainer.appendChild(introItem);
 
-      // 2. Фотографии (от 1.jpg до 60.jpg)
+      // 2. Фотографии (от 1 до 60 с автоподбором расширений)
       for (let i = 1; i <= TOTAL_PHOTOS; i++) {
         const item = document.createElement("div");
         item.className = "slide-item";
         item.innerHTML = `
-          <div class="slide-bg" style="background-image: url('${i}.jpg');"></div>
-          <img src="${i}.jpg" class="slide-img" alt="Фото ${i}">
+          <div class="slide-bg" id="bg-${i}" style="background-image: url('${i}.jpg.jpg');"></div>
+          <img src="${i}.jpg.jpg" data-step="1" onerror="handleImgError(this, ${i})" class="slide-img" alt="Фото ${i}">
         `;
         slidesContainer.appendChild(item);
       }
@@ -372,7 +395,7 @@
       btn.innerText = music.muted ? "🔇" : "🔊";
     }
 
-    /* Анимация кружащихся и падающих лепестков роз */
+    /* Анимация лепестков роз */
     const canvas = document.getElementById("petalsCanvas");
     const ctx = canvas.getContext("2d");
     let width = canvas.width = window.innerWidth;
@@ -383,9 +406,8 @@
       height = canvas.height = window.innerHeight;
     });
 
-    const PETALS_COUNT = 32;
+    const PETALS_COUNT = 30;
     const petals = [];
-
     const petalColors = [
       "rgba(255, 182, 193, 0.75)",
       "rgba(255, 192, 203, 0.8)",
@@ -411,7 +433,7 @@
 
     for (let i = 0; i < PETALS_COUNT; i++) {
       const p = createPetal();
-      p.y = Math.random() * height; // сразу распределяем по экрану
+      p.y = Math.random() * height;
       petals.push(p);
     }
 
@@ -456,6 +478,7 @@
     function startPresentation() {
       initSlides();
       document.getElementById("startOverlay").style.display = "none";
+      canvas.style.display = "block";
       updatePetals();
       music.play().catch(err => console.log("Ошибка воспроизведения:", err));
     }
