@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; connect-src 'none'; img-src data: blob:; media-src data: blob:; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'none'">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Самой лучшей маме на свете</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: #0b0d13;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Холст для падающих лепестков */
+    #petalsCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    /* Стартовый экран для мамы */
+    .start-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #ffd1dc 0%, #fff0f5 55%, #ffffff 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      gap: 16px;
+      text-align: center;
+      padding: 24px;
+      color: #4a2040;
+    }
+    .heart-icon {
+      font-size: 46px;
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+    .start-title {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.3;
+      color: #3b1430;
+      text-shadow: 0 2px 12px rgba(255, 105, 180, 0.2);
+    }
+    .start-subtitle {
+      font-size: 15px;
+      color: #6d435f;
+      max-width: 340px;
+      line-height: 1.5;
+    }
+    .start-btn {
+      margin-top: 10px;
+      padding: 16px 40px;
+      font-size: 17px;
+      font-weight: 600;
+      color: #ffffff;
+      background: linear-gradient(135deg, #ff6584 0%, #ff8da1 100%);
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(255, 101, 132, 0.45);
+      transition: transform 0.2s;
+    }
+    .start-btn:hover {
+      transform: scale(1.03);
+    }
+
+    /* Контейнер слайдов */
+    .slideshow-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000000;
+    }
+    .slide-item {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 1.3s ease-in-out;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .slide-item.active {
+      opacity: 1;
+    }
+    .slide-bg {
+      position: absolute;
+      inset: -20px;
+      background-size: cover;
+      background-position: center;
+      filter: blur(25px) brightness(0.35);
+      transform: scale(1.1);
+    }
+    .slide-img {
+      position: relative;
+      max-width: 100%;
+      max-height: 82vh;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+      z-index: 2;
+    }
+
+    /* Вступительный слайд */
+    .slide-item.intro-pink {
+      background: radial-gradient(circle at center, #ffe4ec 0%, #fff1f5 45%, #ffffff 100%);
+      flex-direction: column;
+      text-align: center;
+      padding: 24px;
+      z-index: 10;
+    }
+    .intro-pink .slide-main-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #3b1430;
+      margin-bottom: 16px;
+      line-height: 1.3;
+      text-shadow: 0 2px 14px rgba(255, 182, 193, 0.6);
+    }
+    .intro-pink .slide-desc {
+      font-size: 17px;
+      color: #5c324c;
+      line-height: 1.6;
+      font-weight: 400;
+    }
+    .intro-pink .decor-icons {
+      font-size: 30px;
+      margin-top: 20px;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    /* Финальный слайд */
+    .text-slide-dark {
+      background: radial-gradient(circle at center, #1e1b2e 0%, #0b0d13 100%);
+      flex-direction: column;
+      text-align: center;
+      padding: 24px;
+      z-index: 10;
+    }
+    .text-slide-dark .slide-main-title {
+      font-size: 30px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
+    .text-slide-dark .slide-desc {
+      font-size: 17px;
+      color: #e2e8f0;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+    .text-slide-dark .decor-icons {
+      font-size: 28px;
+      margin-top: 20px;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    /* Панель управления */
+    .controls-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      padding: 8px 16px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      z-index: 50;
+    }
+    .ctrl-btn {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 16px;
+      padding: 6px 8px;
+      cursor: pointer;
+    }
+    .track-info {
+      font-size: 12px;
+      color: #cbd5e1;
+      min-width: 34px;
+      text-align: center;
+    }
+    .progress-bar-container {
+      flex: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 0 4px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #ff6584;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Стартовый экран для мамы -->
+  <div class="start-overlay" id="startOverlay">
+    <div class="heart-icon">❤️</div>
+    <div class="start-title">Самой лучшей маме на свете</div>
+    <div class="start-subtitle">Песня о любви, благодарности и самых дорогих воспоминаниях.<br><br>От твоей дочери.</div>
+    <button class="start-btn" onclick="startPresentation()">Смотреть с музыкой ♫</button>
+  </div>
+
+  <!-- Анимация лепестков -->
+  <canvas id="petalsCanvas"></canvas>
+
+  <audio id="bgMusic" src="song.mp3" preload="auto"></audio>
+  <div class="slideshow-container" id="slidesContainer"></div>
+
+  <div class="controls-bar">
+    <button class="ctrl-btn" onclick="prevSlide()">◀</button>
+    <button class="ctrl-btn" id="playPauseBtn" onclick="togglePlayPause()">⏸</button>
+    <button class="ctrl-btn" onclick="nextSlide()">▶</button>
+    <div class="track-info" id="timeInfo">0:00</div>
+    <div class="progress-bar-container" onclick="seekAudio(event)">
+      <div class="progress-bar-fill" id="audioProgress"></div>
+    </div>
+    <button class="ctrl-btn" id="musicBtn" onclick="toggleMusic()">🔊</button>
+  </div>
+
+  <script>
+    const TOTAL_PHOTOS = 60;
+
+    const INTRO_SECONDS = 12; // секунд до слов
+    const OUTRO_SECONDS = 10; // секунд на финальный слайд
+
+    let currentIndex = 0;
+    const music = document.getElementById("bgMusic");
+    const slidesContainer = document.getElementById("slidesContainer");
+    const audioProgress = document.getElementById("audioProgress");
+    const timeInfo = document.getElementById("timeInfo");
+
+    /* Инициализация слайдов */
+    function initSlides() {
+      slidesContainer.innerHTML = "";
+
+      // 1. Вступительный слайд
+      const introItem = document.createElement("div");
+      introItem.className = "slide-item intro-pink active";
+      introItem.innerHTML = `
+        <h1 class="slide-main-title">Самой лучшей маме на свете</h1>
+        <p class="slide-desc">Песня о любви, благодарности и самых дорогих воспоминаниях.<br><br>От твоей дочери.</p>
+        <div class="decor-icons">🌸 ❤️ 🌸</div>
+      `;
+      slidesContainer.appendChild(introItem);
+
+      // 2. Фотографии (от 1.jpg до 60.jpg)
+      for (let i = 1; i <= TOTAL_PHOTOS; i++) {
+        const item = document.createElement("div");
+        item.className = "slide-item";
+        item.innerHTML = `
+          <div class="slide-bg" style="background-image: url('${i}.jpg');"></div>
+          <img src="${i}.jpg" class="slide-img" alt="Фото ${i}">
+        `;
+        slidesContainer.appendChild(item);
+      }
+
+      // 3. Финальный слайд
+      const outroItem = document.createElement("div");
+      outroItem.className = "slide-item text-slide-dark";
+      outroItem.innerHTML = `
+        <h1 class="slide-main-title">Ты лучшая мама на свете!</h1>
+        <p class="slide-desc">Спасибо за бесконечное тепло, любовь и поддержку.</p>
+        <div class="decor-icons">💐 ❤️ 💐</div>
+      `;
+      slidesContainer.appendChild(outroItem);
+    }
+
+    function showSlide(index) {
+      const slides = document.querySelectorAll(".slide-item");
+      if (slides.length === 0) return;
+      slides.forEach(s => s.classList.remove("active"));
+      currentIndex = Math.max(0, Math.min(index, slides.length - 1));
+      slides[currentIndex].classList.add("active");
+    }
+
+    function nextSlide() { showSlide(currentIndex + 1); }
+    function prevSlide() { showSlide(currentIndex - 1); }
+
+    music.addEventListener("timeupdate", function() {
+      if (!music.duration) return;
+
+      const progress = music.currentTime / music.duration;
+      audioProgress.style.width = (progress * 100) + "%";
+
+      const curM = Math.floor(music.currentTime / 60);
+      const curS = Math.floor(music.currentTime % 60).toString().padStart(2, "0");
+      timeInfo.innerText = curM + ":" + curS;
+
+      const totalSlidesCount = TOTAL_PHOTOS + 2;
+      const finalSlideIndex = totalSlidesCount - 1;
+
+      let targetIndex = 0;
+      if (music.currentTime < INTRO_SECONDS) {
+        targetIndex = 0;
+      } else if (music.currentTime >= (music.duration - OUTRO_SECONDS)) {
+        targetIndex = finalSlideIndex;
+      } else {
+        const photoTime = music.currentTime - INTRO_SECONDS;
+        const totalPhotoDuration = Math.max(1, music.duration - INTRO_SECONDS - OUTRO_SECONDS);
+        const photoProgress = Math.min(1, Math.max(0, photoTime / totalPhotoDuration));
+        targetIndex = 1 + Math.min(TOTAL_PHOTOS - 1, Math.floor(photoProgress * TOTAL_PHOTOS));
+      }
+
+      if (targetIndex !== currentIndex) {
+        showSlide(targetIndex);
+      }
+    });
+
+    function seekAudio(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickPos = (e.clientX - rect.left) / rect.width;
+      if (music.duration) {
+        music.currentTime = clickPos * music.duration;
+      }
+    }
+
+    function togglePlayPause() {
+      const btn = document.getElementById("playPauseBtn");
+      if (music.paused) {
+        music.play();
+        btn.innerText = "⏸";
+      } else {
+        music.pause();
+        btn.innerText = "⏵";
+      }
+    }
+
+    function toggleMusic() {
+      const btn = document.getElementById("musicBtn");
+      music.muted = !music.muted;
+      btn.innerText = music.muted ? "🔇" : "🔊";
+    }
+
+    /* Анимация кружащихся и падающих лепестков роз */
+    const canvas = document.getElementById("petalsCanvas");
+    const ctx = canvas.getContext("2d");
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener("resize", () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    const PETALS_COUNT = 32;
+    const petals = [];
+
+    const petalColors = [
+      "rgba(255, 182, 193, 0.75)",
+      "rgba(255, 192, 203, 0.8)",
+      "rgba(255, 160, 180, 0.7)",
+      "rgba(255, 218, 224, 0.85)",
+      "rgba(255, 105, 180, 0.65)"
+    ];
+
+    function createPetal() {
+      return {
+        x: Math.random() * width,
+        y: Math.random() * -height,
+        size: 10 + Math.random() * 12,
+        speedY: 1 + Math.random() * 1.8,
+        speedX: Math.sin(Math.random() * Math.PI) * 1.2,
+        angle: Math.random() * Math.PI * 2,
+        angularSpeed: (Math.random() - 0.5) * 0.03,
+        swing: Math.random() * Math.PI * 2,
+        swingSpeed: 0.02 + Math.random() * 0.02,
+        color: petalColors[Math.floor(Math.random() * petalColors.length)]
+      };
+    }
+
+    for (let i = 0; i < PETALS_COUNT; i++) {
+      const p = createPetal();
+      p.y = Math.random() * height; // сразу распределяем по экрану
+      petals.push(p);
+    }
+
+    function drawPetal(p) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.scale(Math.sin(p.swing), 1);
+
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(-p.size / 2, -p.size / 2, -p.size / 2, p.size / 2, 0, p.size);
+      ctx.bezierCurveTo(p.size / 2, p.size / 2, p.size / 2, -p.size / 2, 0, 0);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function updatePetals() {
+      ctx.clearRect(0, 0, width, height);
+
+      petals.forEach(p => {
+        p.y += p.speedY;
+        p.x += Math.sin(p.swing) * 1.2 + p.speedX * 0.3;
+        p.angle += p.angularSpeed;
+        p.swing += p.swingSpeed;
+
+        if (p.y > height + 20) {
+          p.y = -20;
+          p.x = Math.random() * width;
+        }
+        if (p.x > width + 20) p.x = -20;
+        if (p.x < -20) p.x = width + 20;
+
+        drawPetal(p);
+      });
+
+      requestAnimationFrame(updatePetals);
+    }
+
+    function startPresentation() {
+      initSlides();
+      document.getElementById("startOverlay").style.display = "none";
+      updatePetals();
+      music.play().catch(err => console.log("Ошибка воспроизведения:", err));
+    }
+  </script>
+</body>
+</html>
